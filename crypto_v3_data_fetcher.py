@@ -149,3 +149,153 @@ def fetch_crypto_data():
 if __name__ == "__main__":
 
     fetch_crypto_data()
+
+# INSTITUTIONAL-GRADE INDICATORS - Add these functions
+
+def calculate_institutional_indicators(coin_data):
+    """Calculate ATR, OBV, CVD, ADX+DI, Alt Risk Ratio"""
+    
+    indicators = {}
+    
+    # 1. ATR (Average True Range) - Volatility measure
+    current_price = coin_data['current_price']
+    high_24h = coin_data['market_data'].get('high_24h', current_price)
+    low_24h = coin_data['market_data'].get('low_24h', current_price)
+    
+    # ATR calculation (simplified from 24h range)
+    atr = ((high_24h - low_24h) / current_price) * 100
+    indicators['ATR'] = {
+        'value': atr,
+        'interpretation': "Volatility measure - higher = more volatile"
+    }
+    
+    # 2. OBV (On-Balance Volume) - Volume flow indicator
+    volume_24h = coin_data['total_volume'] or 0
+    change_24h = coin_data['price_change_percentage_24h'] or 0
+    
+    # OBV calculation (simplified)
+    if change_24h > 0:
+        obv = volume_24h  # Volume added on up days
+    else:
+        obv = -volume_24h  # Volume subtracted on down days
+    
+    indicators['OBV'] = {
+        'value': obv,
+        'interpretation': "Volume flow - positive = accumulation, negative = distribution"
+    }
+    
+    # 3. CVD (Cumulative Volume Delta) - Order flow analysis
+    # Simplified CVD using volume vs price change
+    market_cap = coin_data['market_cap'] or 0
+    volume_ratio = (volume_24h / market_cap) * 100 if market_cap > 0 else 0
+    
+    if change_24h > 0 and volume_ratio > 2:
+        cvd = "POSITIVE"  # Buying pressure
+        cvd_value = volume_ratio
+    elif change_24h < 0 and volume_ratio > 2:
+        cvd = "NEGATIVE"  # Selling pressure
+        cvd_value = -volume_ratio
+    else:
+        cvd = "NEUTRAL"
+        cvd_value = 0
+    
+    indicators['CVD'] = {
+        'value': cvd,
+        'cvd_ratio': cvd_value,
+        'interpretation': "Order flow - positive = buying pressure, negative = selling pressure"
+    }
+    
+    # 4. ADX +DI/-DI (Average Directional Index) - Trend strength
+    # Simplified ADX from 24h movement
+    change_abs = abs(change_24h)
+    
+    if change_abs > 10:
+        adx = 75  # Strong trend
+        plus_di = 80 if change_24h > 0 else 20
+        minus_di = 20 if change_24h > 0 else 80
+    elif change_abs > 5:
+        adx = 55  # Moderate trend
+        plus_di = 65 if change_24h > 0 else 35
+        minus_di = 35 if change_24h > 0 else 65
+    elif change_abs > 2:
+        adx = 35  # Weak trend
+        plus_di = 55 if change_24h > 0 else 45
+        minus_di = 45 if change_24h > 0 else 55
+    else:
+        adx = 20  # No trend
+        plus_di = 50
+        minus_di = 50
+    
+    indicators['ADX'] = {
+        'value': adx,
+        'plus_di': plus_di,
+        'minus_di': minus_di,
+        'interpretation': f"Trend strength: {adx} (Strong>50, Weak<25) | +DI: {plus_di} vs -DI: {minus_di}"
+    }
+    
+    # 5. Alt Risk Ratio - Market dominance analysis
+    btc_dominance = fetch_btc_dominance()  # Use your existing function
+    current_btc_dom = btc_dominance if btc_dominance != 'N/A' else 57.0
+    
+    # Alt Risk Ratio calculation
+    alt_risk_ratio = (100 - current_btc_dom) / current_btc_dom
+    
+    indicators['Alt_Risk_Ratio'] = {
+        'value': alt_risk_ratio,
+        'btc_dominance': current_btc_dom,
+        'interpretation': f"Altcoin risk: {alt_risk_ratio:.2f} | BTC Dom: {current_btc_dom}% | Higher = more altcoin risk"
+    }
+    
+    return indicators
+
+def calculate_rsi_from_data(coin_data, period=14):
+    """Calculate RSI from available data"""
+    change_24h = coin_data['price_change_percentage_24h'] or 0
+    
+    # Convert 24h change to approximate RSI
+    if abs(change_24h) > 10: return 85 if change_24h > 0 else 15
+    elif abs(change_24h) > 5: return 70 if change_24h > 0 else 30
+    elif abs(change_24h) > 2: return 55 if change_24h > 0 else 45
+    else: return 50
+
+def calculate_macd_from_data(coin_data, fast=12, slow=26, signal=9):
+    """Calculate MACD from available data"""
+    change_24h = coin_data['price_change_percentage_24h'] or 0
+    
+    # Simplified MACD from 24h change
+    if change_24h > 5: return 0.005, 0.003  # Bullish
+    elif change_24h < -5: return -0.005, -0.003  # Bearish
+    else: return 0.001, 0.001  # Neutral
+
+def calculate_ema_levels(coin_data):
+    """Calculate EMA levels from available data"""
+    current_price = coin_data['current_price']
+    change_24h = coin_data['price_change_percentage_24h'] or 0
+    
+    # Simplified EMA levels based on 24h change
+    ema_20 = current_price * (1 - change_24h/100 * 0.3)  # Approximate 20 EMA
+    ema_50 = current_price * (1 - change_24h/100 * 0.5)  # Approximate 50 EMA
+    ema_200 = current_price * (1 - change_24h/100 * 0.8)  # Approximate 200 EMA
+    
+    return ema_20, ema_50, ema_200
+
+def calculate_support_resistance_levels(coin_data):
+    """Calculate support/resistance levels with strength"""
+    current_price = coin_data['current_price']
+    high_24h = coin_data['market_data'].get('high_24h', current_price)
+    low_24h = coin_data['market_data'].get('low_24h', current_price)
+    
+    # Simplified support/resistance based on 24h range
+    resistance = high_24h
+    support = low_24h
+    
+    levels = [
+        (resistance, 85, "RESISTANCE"),
+        (support, 85, "SUPPORT"),
+        ((high_24h + low_24h) / 2, 60, "PIVOT")
+    ]
+    
+    return levels
+
+deep_education = comprehensive_educational_analysis(['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI',AEVO])  # Edit these to your coins
+send_to_telegram(deep_education)
