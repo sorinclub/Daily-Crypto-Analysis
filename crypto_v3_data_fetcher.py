@@ -413,3 +413,50 @@ def interpret_rsi(rsi, timeframe):
 multi_tf = multi_timeframe_analysis(['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI','AEVO'])  
 send_to_telegram(multi_tf)
 
+# At the very end of fetch_crypto_data() function, REPLACE the current ending with this:
+
+# TOP COINS SUMMARY (brief)
+top_summary = "Top 5:\n"
+for i, coin in enumerate(data[:5], 1):
+    symbol = coin['symbol'].upper()
+    price = coin['current_price']
+    change_24h = coin['price_change_percentage_24h'] or 0
+    if price < 0.01:
+        price_str = f"${price:.6f}"
+    else:
+        price_str = f"${price:.2f}"
+    top_summary += f"{i}. {symbol} {price_str} ({change_24h:+.2f}%)\n"
+
+# HIGH MOMENTUM (brief)
+momentum_summary = "\nHigh Momentum (>5%):\n"
+momentum_count = 0
+for coin in data[20:200]:
+    change = coin['price_change_percentage_24h'] or 0
+    if abs(change) > 5:
+        symbol = coin['symbol'].upper()
+        change_str = f"{change:+.2f}%"
+        momentum_summary += f"{symbol} {change_str}\n"
+        momentum_count += 1
+        if momentum_count >= 5:  # Limit to 5 for brevity
+            break
+
+# YOUR WATCHLIST (brief)
+watchlist_summary = "\nYour Watchlist:\n"
+watchlist_found = 0
+for coin in data[20:200]:
+    if coin['symbol'].upper() in ['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI','AEVO']:
+        symbol = coin['symbol'].upper()
+        price = coin['current_price']
+        change_24h = coin['price_change_percentage_24h'] or 0
+        if price < 0.01:
+            price_str = f"${price:.6f}"
+        else:
+            price_str = f"${price:.2f}"
+        watchlist_summary += f"{symbol} {price_str} ({change_24h:+.2f}%)\n"
+        watchlist_found += 1
+
+# COMPREHENSIVE EDUCATIONAL ANALYSIS (detailed for your coins)
+deep_education = comprehensive_educational_analysis(['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI','AEVO'])  # Edit these to your coins
+send_to_telegram(deep_education)
+
+
