@@ -5,8 +5,8 @@ import time
 import os
 
 # Telegram configuration from environment variables
-TELEGRAM_BOT_TOKEN = os.environ[8266668077:AAFgnH0vc23MCi0jwLZWn_gdsw1jz3lLeW8]
-TELEGRAM_CHAT_ID = os.environ[-4873059166]
+TELEGRAM_BOT_TOKEN = os.environ['TELEGRAM_BOT_TOKEN']  
+TELEGRAM_CHAT_ID = os.environ['TELEGRAM_CHAT_ID']
 
 def send_to_telegram(message):
     """Sends message to Telegram"""
@@ -147,4 +147,5 @@ def fetch_crypto_data():
         print(f"Error fetching data: {e}")
 
 if __name__ == "__main__":
+
     fetch_crypto_data()
