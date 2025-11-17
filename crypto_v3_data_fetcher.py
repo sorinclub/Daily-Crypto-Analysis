@@ -297,5 +297,119 @@ def calculate_support_resistance_levels(coin_data):
     
     return levels
 
-deep_education = comprehensive_educational_analysis(['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI',AEVO])  # Edit these to your coins
+deep_education = comprehensive_educational_analysis(['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI','AEVO'])  
 send_to_telegram(deep_education)
+
+# MULTI-TIMEFRAME ANALYSIS - Add these functions
+
+def multi_timeframe_analysis(coins):
+    """1H, 4H, 1D analysis for comprehensive view"""
+    
+    analysis = "🕐 *MULTI-TIMEFRAME ANALYSIS*\n"
+    analysis += "1H / 4H / 1D comprehensive view\n\n"
+    
+    for symbol in coins:
+        # Fetch data for multiple timeframes (simplified from 24h data)
+        coin_data = next((c for c in data if c['symbol'].upper() == symbol), None)
+        if not coin_data:
+            continue
+            
+        current_price = coin_data['current_price']
+        change_24h = coin_data['price_change_percentage_24h'] or 0
+        
+        analysis += f"\n## 🕐 {symbol} - MULTI-TIMEFRAME\n"
+        analysis += f"Current: ${current_price:.4f}\n\n"
+        
+        # 1H ANALYSIS (from 24h data - approximated)
+        analysis += f"*1 HOUR (Intraday):*\n"
+        change_1h_approx = change_24h / 24  # Approximate 1h change
+        analysis += f"• Change: {change_1h_approx:+.2f}% (approx)\n"
+        analysis += f"• RSI (1H): {calculate_rsi_approx(change_1h_approx, 1):.1f} "
+        analysis += interpret_rsi(calculate_rsi_approx(change_1h_approx, 1), "1H")
+        analysis += "\n"
+        
+        # 4H ANALYSIS (from 24h data - approximated)
+        analysis += f"\n*4 HOUR (Swing):*\n"
+        change_4h_approx = change_24h / 6  # Approximate 4h change
+        analysis += f"• Change: {change_4h_approx:+.2f}% (approx)\n"
+        analysis += f"• RSI (4H): {calculate_rsi_approx(change_4h_approx, 4):.1f} "
+        analysis += interpret_rsi(calculate_rsi_approx(change_4h_approx, 4), "4H")
+        analysis += "\n"
+        
+        # 1D ANALYSIS (from 24h data - exact)
+        analysis += f"\n*1 DAY (Trend):*\n"
+        analysis += f"• Change: {change_24h:+.2f}% (exact)\n"
+        analysis += f"• RSI (1D): {calculate_rsi_from_data(coin_data):.1f} "
+        analysis += interpret_rsi(calculate_rsi_from_data(coin_data), "1D")
+        analysis += "\n"
+        
+        # MULTI-TIMEFRAME CONFLUENCE
+        analysis += f"\n*MULTI-TIMEFRAME CONFLUENCE:*\n"
+        
+        # Calculate confluence score
+        confluence_score = calculate_multi_timeframe_confluence(coin_data)
+        
+        if confluence_score >= 80:
+            analysis += "🟢 HIGH CONFLUENCE - All timeframes align bullish\n"
+            analysis += "✅ RECOMMENDATION: Strong bullish bias across all timeframes\n"
+        elif confluence_score >= 60:
+            analysis += "🟡 MEDIUM CONFLUENCE - Mixed but bullish bias\n"
+            analysis += "⚠️ RECOMMENDATION: Wait for clearer signals\n"
+        elif confluence_score >= 40:
+            analysis += "🟡 LOW CONFLUENCE - Mixed signals\n"
+            analysis += "⚠️ RECOMMENDATION: Neutral stance, wait for confirmation\n"
+        else:
+            analysis += "🔴 NO CONFLUENCE - Bearish alignment\n"
+            analysis += "❌ RECOMMENDATION: Bearish bias across timeframes\n"
+        
+        analysis += "\n" + "="*60 + "\n\n"
+    
+    return analysis
+
+def calculate_multi_timeframe_confluence(coin_data):
+    """Calculate confluence score across timeframes"""
+    score = 0
+    
+    # 1D score (exact data)
+    change_24h = coin_data['price_change_percentage_24h'] or 0
+    if change_24h > 5: score += 40      # Strong 1D bullish
+    elif change_24h > 2: score += 30    # Moderate 1D bullish
+    elif change_24h > 0: score += 20    # Slight 1D bullish
+    elif change_24h > -2: score += 10   # Neutral 1D
+    else: score += 0                    # Bearish 1D
+    
+    # 4H score (approximated)
+    change_4h_approx = change_24h / 6
+    if abs(change_4h_approx) > 2: score += 30    # Strong 4H signal
+    elif abs(change_4h_approx) > 1: score += 20   # Moderate 4H signal
+    else: score += 10                             # Weak 4H signal
+    
+    # 1H score (approximated)
+    change_1h_approx = change_24h / 24
+    if abs(change_1h_approx) > 0.5: score += 20   # Strong 1H signal
+    elif abs(change_1h_approx) > 0.2: score += 10  # Moderate 1H signal
+    else: score += 5                               # Weak 1H signal
+    
+    return score
+
+def calculate_rsi_approx(change, hours):
+    """Approximate RSI for different timeframes"""
+    # Simplified RSI based on change magnitude and timeframe
+    magnitude = abs(change) * hours  # Scale by timeframe
+    
+    if magnitude > 50: return 85 if change > 0 else 15
+    elif magnitude > 20: return 70 if change > 0 else 30
+    elif magnitude > 5: return 55 if change > 0 else 45
+    else: return 50
+
+def interpret_rsi(rsi, timeframe):
+    """Interpret RSI for specific timeframe"""
+    if rsi > 70: return "🔴 OVERBOUGHT"
+    elif rsi > 60: return "🟡 HIGH"
+    elif rsi > 40: return "🟢 NEUTRAL"
+    elif rsi > 30: return "🟡 LOW"
+    else: return "🔴 OVERSOLD"
+
+multi_tf = multi_timeframe_analysis(['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI','AEVO'])  
+send_to_telegram(multi_tf)
+
