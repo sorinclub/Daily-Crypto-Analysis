@@ -459,4 +459,150 @@ for coin in data[20:200]:
 deep_education = comprehensive_educational_analysis(['BTC', 'ETH', 'CAKE', '1INCH', 'DOT','ARB', 'TIA', 'AVAX','EGLD','CHZ','COTI','AEVO'])  # Edit these to your coins
 send_to_telegram(deep_education)
 
+# HYPERLIQUID INTEGRATION - Add to your existing crypto_v3_data_fetcher.py
+
+import requests
+import json
+import time
+
+def fetch_hyperliquid_data(symbols):
+    """Pull institutional data from Hyperliquid"""
+    
+    hyperliquid_data = {}
+    
+    # Hyperliquid API endpoints
+    BASE_URL = "https://api.hyperliquid.xyz"
+    
+    for symbol in symbols:
+        try:
+            # 1. Real-time order book and perpetual data
+            order_book_url = f"{BASE_URL}/info"
+            order_book_payload = {
+                "type": "metaAndAssetContext",
+                "coin": symbol
+            }
+            
+            response = requests.post(order_book_url, json=order_book_payload, timeout=10)
+            response.raise_for_status()
+            hyper_data = response.json()
+            
+            # 2. Funding rates and open interest
+            funding_url = f"{BASE_URL}/info"
+            funding_payload = {
+                "type": "clearinghouseState",
+                "coin": symbol
+            }
+            
+            funding_response = requests.post(funding_url, json=funding_payload, timeout=10)
+            funding_data = funding_response.json()
+            
+            # Extract institutional data
+            hyperliquid_data[symbol] = {
+                'order_book': hyper_data,
+                'funding_rates': funding_data,
+                'institutional_metrics': calculate_hyperliquid_metrics(hyper_data, funding_data)
+            }
+            
+        except Exception as e:
+            print(f"Warning: Could not fetch Hyperliquid data for {symbol}: {e}")
+            # Fallback to CoinGecko data
+            hyperliquid_data[symbol] = None
+    
+    return hyperliquid_data
+
+def calculate_hyperliquid_metrics(order_book_data, funding_data):
+    """Calculate institutional metrics from Hyperliquid data"""
+    
+    metrics = {}
+    
+    try:
+        # 1. Order Flow Analysis (CVD from order book)
+        if 'orderBook' in order_book_data:
+            bids = order_book_data['orderBook'].get('bids', [])
+            asks = order_book_data['orderBook'].get('asks', [])
+            
+            # Calculate CVD from order book
+            total_bids = sum([bid[1] for bid in bids[:10]])  # Top 10 bids
+            total_asks = sum([ask[1] for ask in asks[:10]])  # Top 10 asks
+            
+            cvd_hyper = (total_bids - total_asks) / (total_bids + total_asks) * 100
+            metrics['CVD_Hyperliquid'] = {
+                'value': cvd_hyper,
+                'interpretation': "Hyperliquid order flow - positive = more bids"
+            }
+        
+        # 2. Funding Rates (institutional sentiment)
+        if 'fundingRates' in funding_data:
+            funding_rate = funding_data['fundingRates'].get('rate', 0)
+            metrics['Funding_Rate'] = {
+                'value': funding_rate,
+                'interpretation': f"Funding rate: {funding_rate:.4f} (positive = longs pay shorts)"
+            }
+        
+        # 3. Open Interest (institutional positioning)
+        if 'openInterest' in funding_data:
+            oi = funding_data['openInterest']
+            metrics['Open_Interest'] = {
+                'value': oi,
+                'interpretation': f"Open interest: {oi:,.0f} (higher = more institutional interest)"
+            }
+        
+        # 4. Liquidation Data (institutional behavior)
+        if 'liquidations' in funding_data:
+            liquidations = funding_data['liquidations']
+            long_liq = liquidations.get('longs', 0)
+            short_liq = liquidations.get('shorts', 0)
+            
+            metrics['Liquidations'] = {
+                'longs': long_liq,
+                'shorts': short_liq,
+                'interpretation': f"Liquidations: Longs: ${long_liq:,.0f}, Shorts: ${short_liq:,.0f}"
+            }
+        
+    except Exception as e:
+        print(f"Warning: Could not calculate Hyperliquid metrics: {e}")
+        metrics = {}
+    
+    return metrics
+
+def integrate_hyperliquid_analysis(coin_data, hyperliquid_data):
+    """Integrate Hyperliquid data with CoinGecko data"""
+    
+    if not hyperliquid_data or coin_data['symbol'].upper() not in hyperliquid_data:
+        return "No Hyperliquid data available"
+    
+    symbol = coin_data['symbol'].upper()
+    hyper_data = hyperliquid_data[symbol]
+    
+    if not hyper_data:
+        return "No Hyperliquid data available"
+    
+    analysis = "\n\n*HYPERLIQUID INSTITUTIONAL DATA:*\n"
+    
+    # Add Hyperliquid metrics
+    if 'institutional_metrics' in hyper_data:
+        metrics = hyper_data['institutional_metrics']
+        
+        if 'CVD_Hyperliquid' in metrics:
+            analysis += f"• Hyperliquid CVD: {metrics['CVD_Hyperliquid']['value']:+.2f}% ({metrics['CVD_Hyperliquid']['interpretation']})\n"
+        
+        if 'Funding_Rate' in metrics:
+            analysis += f"• Funding Rate: {metrics['Funding_Rate']['value']:.4f} ({metrics['Funding_Rate']['interpretation']})\n"
+        
+        if 'Open_Interest' in metrics:
+            analysis += f"• Open Interest: {metrics['Open_Interest']['value']:,.0f} ({metrics['Open_Interest']['interpretation']})\n"
+        
+        if 'Liquidations' in metrics:
+            analysis += f"• Liquidations: Longs: ${metrics['Liquidations']['longs']:,.0f}, Shorts: ${metrics['Liquidations']['shorts']:,.0f}\n"
+    
+    return analysis
+
+# At the end of your fetch_crypto_data() function, ADD this:
+
+# HYPERLIQUID INTEGRATION
+hyper_data = fetch_hyperliquid_data(['BTC', 'ETH', 'AVAX', 'ARB', 'DOT'])  # Your coins
+hyper_analysis = integrate_hyperliquid_analysis(coin_data, hyper_data)
+send_to_telegram(hyper_analysis)
+
+
 
